@@ -17,7 +17,7 @@ import (
 	"context"
 
 	"github.com/pingcap/kvproto/pkg/metapb"
-	pd "github.com/pingcap/pd/client"
+	pd "github.com/tikv/client-go/pd"
 	"github.com/tikv/client-go/codec"
 )
 

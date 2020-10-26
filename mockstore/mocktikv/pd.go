@@ -20,7 +20,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/pingcap/kvproto/pkg/metapb"
-	"github.com/pingcap/pd/client"
+	"github.com/tikv/client-go/pd"
 )
 
 // Use global variables to prevent pdClients from creating duplicate timestamps.

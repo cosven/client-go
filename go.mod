@@ -1,5 +1,7 @@
 module github.com/tikv/client-go
 
+go 1.14
+
 require (
 	github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc // indirect
 	github.com/alecthomas/units v0.0.0-20151022065526-2efee857e7cf // indirect
@@ -26,12 +28,12 @@ require (
 	github.com/montanaflynn/stats v0.5.0 // indirect
 	github.com/onsi/ginkgo v1.7.0 // indirect
 	github.com/onsi/gomega v1.4.3 // indirect
-	github.com/opentracing/opentracing-go v1.0.2 // indirect
+	github.com/opentracing/opentracing-go v1.0.2
 	github.com/pingcap/check v0.0.0-20190102082844-67f458068fc8
 	github.com/pingcap/gofail v0.0.0-20181217135706-6a951c1e42c3 // indirect
 	github.com/pingcap/goleveldb v0.0.0-20171020122428-b9ff6c35079e
 	github.com/pingcap/kvproto v0.0.0-20190305055742-ab7debc182d9
-	github.com/pingcap/pd v2.1.5+incompatible
+	github.com/pingcap/log v0.0.0-20200828042413-fce0951f1463
 	github.com/pkg/errors v0.8.1
 	github.com/prometheus/client_golang v0.9.2
 	github.com/prometheus/common v0.0.0-20181126121408-4724e9255275
@@ -46,7 +48,7 @@ require (
 	go.etcd.io/bbolt v1.3.2 // indirect
 	go.uber.org/atomic v1.3.2 // indirect
 	go.uber.org/multierr v1.1.0 // indirect
-	go.uber.org/zap v1.9.1 // indirect
+	go.uber.org/zap v1.9.1
 	golang.org/x/time v0.0.0-20181108054448-85acf8d2951c // indirect
 	google.golang.org/grpc v1.19.0
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6 // indirect
