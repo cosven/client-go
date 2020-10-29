@@ -33,15 +33,52 @@ var (
 	ErrMaxScanLimitExceeded = errors.New("limit should be less than MaxRawKVScanLimit")
 )
 
+type CfName string
+
+var (
+	CfWrite   CfName = "write"
+	CfDefault CfName = "default"
+	CfLock    CfName = "lock"
+)
+
 // ScanOption is used to provide additional information for scaning operaiont
 type ScanOption struct {
-	KeyOnly bool // if true, the result will only contains keys
+	KeyOnly bool   // if true, the result will only contains keys
+	Cf      CfName // column family
+}
+
+// GetOption is used to provider additional information for get operation
+type GetOption struct {
+	Cf CfName
+}
+
+// PutOption is used to provider additional information for get operation
+type PutOption struct {
+	Cf CfName
+}
+
+// DeleteOption is used to provider additional information for get operation
+type DeleteOption struct {
+	Cf CfName
 }
 
 func DefaultScanOption() ScanOption {
 	return ScanOption{
 		KeyOnly: false,
+		Cf:      CfDefault,
 	}
+}
+
+func DefaultGetOption() GetOption {
+	return GetOption{Cf: CfDefault}
+}
+
+func DefaultPutOption() PutOption {
+	return PutOption{Cf: CfDefault}
+}
+
+func DefaultDeleteOption() DeleteOption {
+	return DeleteOption{Cf: CfDefault}
 }
 
 // Client is a rawkv client of TiKV server which is used as a key-value storage,
@@ -85,14 +122,22 @@ func (c *Client) ClusterID() uint64 {
 }
 
 // Get queries value with the key. When the key does not exist, it returns `nil, nil`.
-func (c *Client) Get(ctx context.Context, key []byte) ([]byte, error) {
+func (c *Client) Get(ctx context.Context, key []byte, options ...GetOption) ([]byte, error) {
 	start := time.Now()
 	defer func() { metrics.RawkvCmdHistogram.WithLabelValues("get").Observe(time.Since(start).Seconds()) }()
+
+	var option GetOption
+	if options == nil || len(options) == 0 {
+		option = DefaultGetOption()
+	} else {
+		option = options[0]
+	}
 
 	req := &rpc.Request{
 		Type: rpc.CmdRawGet,
 		RawGet: &kvrpcpb.RawGetRequest{
 			Key: key,
+			Cf:  string(option.Cf),
 		},
 	}
 	resp, _, err := c.sendReq(ctx, key, req)
@@ -141,11 +186,18 @@ func (c *Client) BatchGet(ctx context.Context, keys [][]byte) ([][]byte, error) 
 }
 
 // Put stores a key-value pair to TiKV.
-func (c *Client) Put(ctx context.Context, key, value []byte) error {
+func (c *Client) Put(ctx context.Context, key, value []byte, options ...PutOption) error {
 	start := time.Now()
 	defer func() { metrics.RawkvCmdHistogram.WithLabelValues("put").Observe(time.Since(start).Seconds()) }()
 	metrics.RawkvSizeHistogram.WithLabelValues("key").Observe(float64(len(key)))
 	metrics.RawkvSizeHistogram.WithLabelValues("value").Observe(float64(len(value)))
+
+	var option PutOption
+	if options == nil || len(options) == 0 {
+		option = DefaultPutOption()
+	} else {
+		option = options[0]
+	}
 
 	if len(value) == 0 {
 		return errors.New("empty value is not supported")
@@ -156,6 +208,7 @@ func (c *Client) Put(ctx context.Context, key, value []byte) error {
 		RawPut: &kvrpcpb.RawPutRequest{
 			Key:   key,
 			Value: value,
+			Cf:    string(option.Cf),
 		},
 	}
 	resp, _, err := c.sendReq(ctx, key, req)
@@ -190,14 +243,22 @@ func (c *Client) BatchPut(ctx context.Context, keys, values [][]byte) error {
 }
 
 // Delete deletes a key-value pair from TiKV.
-func (c *Client) Delete(ctx context.Context, key []byte) error {
+func (c *Client) Delete(ctx context.Context, key []byte, options ...DeleteOption) error {
 	start := time.Now()
 	defer func() { metrics.RawkvCmdHistogram.WithLabelValues("delete").Observe(time.Since(start).Seconds()) }()
+
+	var option DeleteOption
+	if options == nil || len(options) == 0 {
+		option = DefaultDeleteOption()
+	} else {
+		option = options[0]
+	}
 
 	req := &rpc.Request{
 		Type: rpc.CmdRawDelete,
 		RawDelete: &kvrpcpb.RawDeleteRequest{
 			Key: key,
+			Cf:  string(option.Cf),
 		},
 	}
 	resp, _, err := c.sendReq(ctx, key, req)
@@ -289,6 +350,7 @@ func (c *Client) Scan(ctx context.Context, startKey, endKey []byte, limit int, o
 				EndKey:   endKey,
 				Limit:    uint32(limit - len(keys)),
 				KeyOnly:  option.KeyOnly,
+				Cf:       string(option.Cf),
 			},
 		}
 		resp, loc, err := c.sendReq(ctx, startKey, req)
@@ -342,6 +404,7 @@ func (c *Client) ReverseScan(ctx context.Context, startKey, endKey []byte, limit
 				Limit:    uint32(limit - len(keys)),
 				Reverse:  true,
 				KeyOnly:  option.KeyOnly,
+				Cf:       string(option.Cf),
 			},
 		}
 		resp, loc, err := c.sendReq(ctx, startKey, req)
